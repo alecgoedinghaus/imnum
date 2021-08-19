@@ -1,8 +1,8 @@
 import argparse
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 from skimage import io, transform, util
-from skimage.util.dtype import img_as_ubyte, img_as_uint
+from skimage.util.dtype import img_as_ubyte
 
 def get_like_colors(image, dimension, tolerance = 25):
     values = np.zeros([dimension[0], dimension[1]])
@@ -28,27 +28,24 @@ def overlay(image, values, dimension):
     # Make this display each different number on separate plots
     for i in range(dimension[0]):
         for j in range(dimension[1]):
-            plt.text(-0.5 + i, 0.5 + j, str(int(values[j, i])), color = inverted_img[j, i] / 255, size = 6)
+            # plt.text(-0.5 + i, 0.5 + j, str(int(values[j, i])), color = inverted_img[j, i] / 255, size = 6)
+            plt.text(-0.375 + i, 0.25 + j, str(int(values[j, i])), color = inverted_img[j, i] / 255, size = 6)
 
 def save_and_display(image, name):
     io.imshow(image)
-    plt.savefig(name + '_plt.png', bbox_inches = 'tight')
-    plt.show()
+    plt.savefig(name + '.pdf', bbox_inches = 'tight')
+    # plt.show()
 
 def main():
     parser = argparse.ArgumentParser()
-
     parser.add_argument('file', type = str, help = 'Image file to be analyzed')
     parser.add_argument('-s', '--scale', type = int, default = 0, help = 'Scale factor for the image, leave empty for no scaling')
     parser.add_argument('-t', '--tolerance', type = int, default = 25, help = 'Tolerance for similar pixels. 0 for exact match, default 25')
-
     args = parser.parse_args()
-    print(args.file)
 
     file = args.file
     scale = args.scale
     tol = args.tolerance
-    
     image = io.imread(file)
 
     if scale != 0:
