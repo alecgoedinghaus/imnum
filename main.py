@@ -1,11 +1,10 @@
-import os
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
-import skimage as sk
 from skimage import io, transform, util
 from skimage.util.dtype import img_as_ubyte, img_as_uint
 
-def get_like_colors(image, dimension, tolerance = 100):
+def get_like_colors(image, dimension, tolerance = 25):
     values = np.zeros([dimension[0], dimension[1]])
     iterator = 0
 
@@ -16,8 +15,8 @@ def get_like_colors(image, dimension, tolerance = 100):
                 iterator += 1
                 for k in range(dimension[0]):
                     for l in range(dimension[1]):
-                        dist = [abs(int(image[i, j, rgb]) - int(image[k, l, rgb])) for rgb in range(3)]
-                        if all(dist_i < tolerance for dist_i in dist):
+                        dist = [abs(int(image[i, j, rgb]) - int(image[k, l, rgb])) for rgb in range(image.shape[2])]
+                        if all(dist_i <= tolerance for dist_i in dist):
                             values[i, j] = iterator
                             values[k, l] = iterator
 
@@ -37,15 +36,30 @@ def save_and_display(image, name):
     plt.show()
 
 def main():
-    path = '/Users/alecgoedinghaus/Documents/Personal Coding Projects/Image Numbering/minecraft_bust.png'
-    bust = io.imread(path)
+    parser = argparse.ArgumentParser()
 
-    # rescale bust from 320x320 to 32x32
-    rescaled_bust = transform.downscale_local_mean(bust, (10, 10, 1), cval = 1)
-    rescaled_bust = img_as_ubyte(rescaled_bust / 255)
+    parser.add_argument('file', type = str, help = 'Image file to be analyzed')
+    parser.add_argument('-s', '--scale', type = int, default = 0, help = 'Scale factor for the image, leave empty for no scaling')
+    parser.add_argument('-t', '--tolerance', type = int, default = 25, help = 'Tolerance for similar pixels. 0 for exact match, default 25')
 
-    values, num_plots = get_like_colors(rescaled_bust, (32, 32), tolerance = 25)
-    overlay(rescaled_bust, values, (32, 32))
-    save_and_display(rescaled_bust, 'output')
+    args = parser.parse_args()
+    print(args.file)
+
+    file = args.file
+    scale = args.scale
+    tol = args.tolerance
+    
+    image = io.imread(file)
+
+    if scale != 0:
+        image = transform.downscale_local_mean(image, (scale, scale, 1), cval = 1)
+        image = img_as_ubyte(image / 255)
+
+    length = image.shape[0]
+    height = image.shape[1]
+
+    values, num_plots = get_like_colors(image, (length, height), tolerance = tol)
+    overlay(image, values, (length, height))
+    save_and_display(image, 'output')
 
 main()
