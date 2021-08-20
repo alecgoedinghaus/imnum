@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from skimage import io, transform, util
 from skimage.util.dtype import img_as_ubyte
+from matplotlib.backends.backend_pdf import PdfPages
 
 def get_like_colors(image, dimension, tolerance = 25):
     values = np.zeros([dimension[0], dimension[1]])
@@ -22,19 +23,43 @@ def get_like_colors(image, dimension, tolerance = 25):
 
     return values, iterator
 
-def overlay(image, values, dimension):
+def overlay(image, values, num_plots, dimension, expand):
     inverted_img = util.invert(image)
 
-    # Make this display each different number on separate plots
-    for i in range(dimension[0]):
-        for j in range(dimension[1]):
-            # plt.text(-0.5 + i, 0.5 + j, str(int(values[j, i])), color = inverted_img[j, i] / 255, size = 6)
-            plt.text(-0.375 + i, 0.25 + j, str(int(values[j, i])), color = inverted_img[j, i] / 255, size = 6)
+    if not expand:
+        for i in range(dimension[0]):
+            for j in range(dimension[1]):
+                plt.text(-0.375 + i, 0.25 + j, str(int(values[j, i])), color = inverted_img[j, i] / 255, size = 6)
+
+    else:
+        figs = []
+        plt.rcParams.update({'figure.max_open_warning': num_plots + 1})
+        for plot_num in range(1, num_plots + 1):
+            fig, axs = plt.subplots(1)
+            for i in range(dimension[0]):
+                for j in range(dimension[1]):
+                    if int(values[j, i]) == plot_num:
+                        # axs[plot_num - 1].imshow(image)
+                        # axs[plot_num - 1].text(-0.375 + i, 0.25 + j, str(int(values[j, i])), color = inverted_img[j, i] / 255, size = 4)
+                        axs.imshow(image)
+                        axs.text(-0.375 + i, 0.25 + j, str(int(values[j, i])), color = inverted_img[j, i] / 255, size = 6)
+            figs.append(fig)
+
+        with PdfPages('output_multi.pdf') as pdf:
+            for fig in figs:
+                plt.figure(fig)
+                pdf.savefig()
 
 def save_and_display(image, name):
     io.imshow(image)
     plt.savefig(name + '.pdf', bbox_inches = 'tight')
     # plt.show()
+
+
+# def expanded_display(image, values, num_plots):
+
+#     io.imshow(image)
+#     plt.savefig()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -56,7 +81,7 @@ def main():
     height = image.shape[1]
 
     values, num_plots = get_like_colors(image, (length, height), tolerance = tol)
-    overlay(image, values, (length, height))
+    overlay(image, values, num_plots, (length, height), True)
     save_and_display(image, 'output')
 
 main()
