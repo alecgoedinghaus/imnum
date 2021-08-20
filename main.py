@@ -30,47 +30,50 @@ def overlay(image, values, num_plots, dimension, expand):
         for i in range(dimension[0]):
             for j in range(dimension[1]):
                 plt.text(-0.375 + i, 0.25 + j, str(int(values[j, i])), color = inverted_img[j, i] / 255, size = 6)
+        
+        return 0
 
     else:
-        figs = []
+        # Unnecessary warning (but probably actually matters for large images)
         plt.rcParams.update({'figure.max_open_warning': num_plots + 1})
+
+        figs = []
         for plot_num in range(1, num_plots + 1):
             fig, axs = plt.subplots(1)
             for i in range(dimension[0]):
                 for j in range(dimension[1]):
                     if int(values[j, i]) == plot_num:
-                        # axs[plot_num - 1].imshow(image)
-                        # axs[plot_num - 1].text(-0.375 + i, 0.25 + j, str(int(values[j, i])), color = inverted_img[j, i] / 255, size = 4)
+                        axs.set_title(plot_num)
                         axs.imshow(image)
                         axs.text(-0.375 + i, 0.25 + j, str(int(values[j, i])), color = inverted_img[j, i] / 255, size = 6)
             figs.append(fig)
 
-        with PdfPages('output_multi.pdf') as pdf:
+        return figs
+
+def save_and_display(image, name, figs):
+    if figs == 0:
+        io.imshow(image)
+        plt.savefig(name + '.pdf', bbox_inches = 'tight')
+        # plt.show()
+    else:
+        with PdfPages(name + '_expanded.pdf') as pdf:
             for fig in figs:
                 plt.figure(fig)
                 pdf.savefig()
 
-def save_and_display(image, name):
-    io.imshow(image)
-    plt.savefig(name + '.pdf', bbox_inches = 'tight')
-    # plt.show()
-
-
-# def expanded_display(image, values, num_plots):
-
-#     io.imshow(image)
-#     plt.savefig()
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('file', type = str, help = 'Image file to be analyzed')
     parser.add_argument('-s', '--scale', type = int, default = 0, help = 'Scale factor for the image, leave empty for no scaling')
-    parser.add_argument('-t', '--tolerance', type = int, default = 25, help = 'Tolerance for similar pixels. 0 for exact match, default 25')
+    parser.add_argument('-t', '--tolerance', type = int, default = 25, help = 'Tolerance for similar pixels. 0 for exact match (default: 25)')
+    parser.add_argument('-e', '--expand', type = bool, default = False, help = 'Break up each pixel numbering into its own page (default: False)')
     args = parser.parse_args()
 
     file = args.file
     scale = args.scale
     tol = args.tolerance
+    expand = args.expand
     image = io.imread(file)
 
     if scale != 0:
@@ -81,7 +84,7 @@ def main():
     height = image.shape[1]
 
     values, num_plots = get_like_colors(image, (length, height), tolerance = tol)
-    overlay(image, values, num_plots, (length, height), True)
-    save_and_display(image, 'output')
+    figs = overlay(image, values, num_plots, (length, height), expand)
+    save_and_display(image, 'output', figs)
 
 main()
