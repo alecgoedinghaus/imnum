@@ -1,4 +1,4 @@
-*.png
-*.pdf
+/*.png
+/*.pdf
 .DS_Store
 .vscode
